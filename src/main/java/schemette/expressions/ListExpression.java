@@ -15,20 +15,7 @@ public class ListExpression implements Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ListExpression that = (ListExpression) o;
-
-        if (!value.equals(that.value)) {
-            return false;
-        }
-
-        return true;
+        return getClass() == o.getClass() && value.equals(((ListExpression) o).value);
     }
 
     @Override
@@ -38,7 +25,7 @@ public class ListExpression implements Expression {
 
     public String toString() {
         return String.format("list(%s)", value.stream()
-                .map((a) -> a.toString())
+                .map(Expression::toString)
                 .reduce((a, b) -> a + ", " + b)
                 .orElse(""));
     }

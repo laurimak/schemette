@@ -10,7 +10,6 @@ import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static schemette.TestUtil.list;
 import static schemette.expressions.BooleanExpression.bool;
@@ -53,7 +52,7 @@ public class EvaluatorTest {
 
         Expression result = Evaluator.evaluate(exp, environment);
 
-        assertThat(result, is(nullValue()));
+        assertThat(result, is(Expression.none()));
         assertThat(environment.lookup(symbol("foo")), is(number(321)));
     }
 
@@ -64,7 +63,7 @@ public class EvaluatorTest {
 
         Expression result = Evaluator.evaluate(exp, environment);
 
-        assertThat(result, is(nullValue()));
+        assertThat(result, is(Expression.none()));
         assertThat(environment.lookup(symbol("foo")), is(symbol("bar")));
     }
 

@@ -26,7 +26,6 @@ public class Environment {
         } else if (enclosingEnvironment != null) {
             return enclosingEnvironment.lookup(symbol);
         }
-
         throw new VariableNotDefinedException(symbol.toString());
     }
 
@@ -46,9 +45,6 @@ public class Environment {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }

@@ -29,7 +29,7 @@ public class Evaluator {
             return evaluateFunctionCall(e, environment);
         }
 
-        return null;
+        throw new IllegalArgumentException(String.format("Unable to evaluate expression '%s'", e));
     }
 
     private static Expression evaluateFunctionCall(Expression e, Environment environment) {
@@ -52,10 +52,10 @@ public class Evaluator {
             return l.value.get(1);
         } else if (isFirstSymbol(l, "set!")) {
             environment.set((SymbolExpression) l.value.get(1), evaluate(l.value.get(2), environment));
-            return null;
+            return Expression.none();
         } else if (isFirstSymbol(l, "define")) {
             environment.define((SymbolExpression) l.value.get(1), evaluate(l.value.get(2), environment));
-            return null;
+            return Expression.none();
         } else if (isFirstSymbol(l, "if")) {
             if (truthy(evaluate(l.value.get(1), environment))) {
                 return evaluate(l.value.get(2), environment);
@@ -67,10 +67,10 @@ public class Evaluator {
         } else if (isFirstSymbol(l, "begin")) {
             return l.value.stream()
                     .reduce((a, b) -> evaluate(b, environment))
-                    .orElse(null);
+                    .orElse(Expression.none());
         }
 
-        return null;
+        throw new IllegalArgumentException(String.format("Invalid special form expression '%s'", e));
     }
 
     private static ProcedureExpression evaluateLambda(ListExpression paramNames, Expression body, Environment environment) {

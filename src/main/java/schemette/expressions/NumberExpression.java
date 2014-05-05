@@ -13,14 +13,7 @@ public class NumberExpression implements Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        return value == ((NumberExpression) o).value;
+        return getClass() == o.getClass() && value == ((NumberExpression) o).value;
     }
 
     @Override

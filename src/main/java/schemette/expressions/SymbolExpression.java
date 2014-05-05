@@ -1,6 +1,7 @@
 package schemette.expressions;
 
 public class SymbolExpression implements Expression {
+
     public final String value;
 
     public SymbolExpression(String value) {
@@ -13,14 +14,7 @@ public class SymbolExpression implements Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        return value.equals(((SymbolExpression) o).value);
+        return getClass() == o.getClass() && value.equals(((SymbolExpression) o).value);
     }
 
     @Override
