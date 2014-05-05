@@ -12,10 +12,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static schemette.TestUtil.list;
 import static schemette.expressions.BooleanExpression.bool;
 import static schemette.expressions.NumberExpression.number;
-import static schemette.TestUtil.list;
-import static schemette.TestUtil.symbol;
+import static schemette.expressions.SymbolExpression.symbol;
 
 public class EvaluatorTest {
 
@@ -23,27 +23,27 @@ public class EvaluatorTest {
     public void number_expression() {
         NumberExpression l = number(123);
 
-        Object result = Evaluator.evaluate(l, emptyEnvironment());
+        Expression result = Evaluator.evaluate(l, emptyEnvironment());
 
-        assertThat(result, is((Object) number(123)));
+        assertThat(result, is(number(123)));
     }
 
     @Test
     public void variable_lookup() {
         Environment e = new Environment(bindings(symbol("foo"), number(123)));
 
-        Object result = Evaluator.evaluate(symbol("foo"), e);
+        Expression result = Evaluator.evaluate(symbol("foo"), e);
 
-        assertThat(result, is((Object) number(123)));
+        assertThat(result, is(number(123)));
     }
 
     @Test
     public void quoted_text() {
         ListExpression exp = list(symbol("quote"), symbol("foo"));
 
-        Object result = Evaluator.evaluate(exp, emptyEnvironment());
+        Expression result = Evaluator.evaluate(exp, emptyEnvironment());
 
-        assertThat(result, is((Object) symbol("foo")));
+        assertThat(result, is(symbol("foo")));
     }
 
     @Test
@@ -51,10 +51,10 @@ public class EvaluatorTest {
         Environment environment = new Environment(bindings(symbol("foo"), number(123)));
         ListExpression exp = list(symbol("set!"), symbol("foo"), number(321));
 
-        Object result = Evaluator.evaluate(exp, environment);
+        Expression result = Evaluator.evaluate(exp, environment);
 
         assertThat(result, is(nullValue()));
-        assertThat((NumberExpression) environment.lookup(symbol("foo")), is(number(321)));
+        assertThat(environment.lookup(symbol("foo")), is(number(321)));
     }
 
     @Test
@@ -62,44 +62,44 @@ public class EvaluatorTest {
         Environment environment = emptyEnvironment();
         ListExpression exp = list(symbol("define"), symbol("foo"), list(symbol("quote"), symbol("bar")));
 
-        Object result = Evaluator.evaluate(exp, environment);
+        Expression result = Evaluator.evaluate(exp, environment);
 
         assertThat(result, is(nullValue()));
-        assertThat((SymbolExpression) environment.lookup(symbol("foo")), is(symbol("bar")));
+        assertThat(environment.lookup(symbol("foo")), is(symbol("bar")));
     }
 
     @Test
     public void boolean_expression() {
         BooleanExpression bool = bool(true);
 
-        Object result = Evaluator.evaluate(bool, emptyEnvironment());
+        Expression result = Evaluator.evaluate(bool, emptyEnvironment());
 
-        assertThat((BooleanExpression) result, is(bool(true)));
+        assertThat(result, is(bool(true)));
     }
 
     @Test
     public void if_expression_true() {
         ListExpression exp = list(symbol("if"), bool(true), number(1), number(2));
 
-        Object result = Evaluator.evaluate(exp, emptyEnvironment());
+        Expression result = Evaluator.evaluate(exp, emptyEnvironment());
 
-        assertThat(result, is((Object) number(1)));
+        assertThat(result, is(number(1)));
     }
 
     @Test
     public void if_expression_false() {
         ListExpression exp = list(symbol("if"), bool(false), number(1), number(2));
 
-        Object result = Evaluator.evaluate(exp, emptyEnvironment());
+        Expression result = Evaluator.evaluate(exp, emptyEnvironment());
 
-        assertThat(result, is((Object) number(2)));
+        assertThat(result, is(number(2)));
     }
 
     @Test
     public void lambda_expression() {
         ListExpression exp = list(symbol("lambda"), list(), list());
 
-        Object result = Evaluator.evaluate(exp, emptyEnvironment());
+        Expression result = Evaluator.evaluate(exp, emptyEnvironment());
 
         assertThat(result, instanceOf(ProcedureExpression.class));
     }
@@ -108,9 +108,9 @@ public class EvaluatorTest {
     public void primitive_procedure_addition() {
         ListExpression exp = list(symbol("+"), number(5), number(7), number(11));
 
-        Object result = Evaluator.evaluate(exp, DefaultEnvironment.newInstance());
+        Expression result = Evaluator.evaluate(exp, DefaultEnvironment.newInstance());
 
-        assertThat((NumberExpression) result, is(number(23)));
+        assertThat(result, is(number(23)));
     }
 
     @Test
@@ -118,9 +118,9 @@ public class EvaluatorTest {
         ListExpression lambda = list(symbol("lambda"), list(symbol("a"), symbol("b")), list(symbol("+"), symbol("a"), symbol("b")));
         ListExpression lambdaCall = list(lambda, number(1), number(2));
 
-        Object result = Evaluator.evaluate(lambdaCall, DefaultEnvironment.newInstance());
+        Expression result = Evaluator.evaluate(lambdaCall, DefaultEnvironment.newInstance());
 
-        assertThat((NumberExpression) result, is(number(3)));
+        assertThat(result, is(number(3)));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class EvaluatorTest {
 
         Object result = Evaluator.evaluate(exp, environment);
 
-        assertThat((NumberExpression) result, is(number(322)));
+        assertThat(result, is(number(322)));
 
     }
 

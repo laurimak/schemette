@@ -7,10 +7,6 @@ public class NumberExpression implements Expression {
         this.value = value;
     }
 
-    public long getValue() {
-        return value;
-    }
-
     public static NumberExpression number(long n) {
         return new NumberExpression(n);
     }

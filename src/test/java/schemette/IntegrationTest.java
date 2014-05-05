@@ -3,7 +3,6 @@ package schemette;
 import org.junit.Test;
 import schemette.environment.DefaultEnvironment;
 import schemette.environment.Environment;
-import schemette.expressions.NumberExpression;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -19,6 +18,6 @@ public class IntegrationTest {
         Evaluator.evaluate(Parser.parse(input), environment);
         Object result = Evaluator.evaluate(Parser.parse("(factorial 3)"), environment);
 
-        assertThat((NumberExpression) result, is(number(6)));
+        assertThat(result, is(number(6)));
     }
 }

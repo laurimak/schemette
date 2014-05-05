@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import static schemette.expressions.BooleanExpression.*;
 import static schemette.expressions.SymbolExpression.symbol;
 
 public class DefaultEnvironment {
@@ -21,12 +22,12 @@ public class DefaultEnvironment {
             .put(symbol("*"),
                     function((args) -> longFunction(args, (a, b) -> a * b)))
             .put(symbol("="),
-                    function((args) -> new BooleanExpression(args.stream()
+                    function((args) -> bool(args.stream()
                             .allMatch((e) -> e.equals(args.get(0))))))
             .put(symbol("#t"),
-                    BooleanExpression.bool(true))
+                    bool(true))
             .put(symbol("#f"),
-                    new BooleanExpression(false))
+                    bool(false))
 
                             .build();
 
@@ -40,8 +41,7 @@ public class DefaultEnvironment {
 
     private static NumberExpression longFunction(List<Expression> args, BinaryOperator<Long> accumulator) {
         return args.stream()
-                .map(a -> (NumberExpression) a)
-                .map(NumberExpression::getValue)
+                .map(a -> ((NumberExpression) a).value)
                 .reduce(accumulator)
                 .map(NumberExpression::number)
                 .get();

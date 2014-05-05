@@ -10,7 +10,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static schemette.expressions.NumberExpression.number;
 import static schemette.TestUtil.list;
-import static schemette.TestUtil.symbol;
+import static schemette.expressions.SymbolExpression.symbol;
 
 public class ParserTest {
 
@@ -39,21 +39,21 @@ public class ParserTest {
     public void parse() {
         Expression exp = Parser.parse("foo");
 
-        assertThat(exp, is((Expression) symbol("foo")));
+        assertThat(exp, is(symbol("foo")));
     }
 
     @Test
     public void parse2() {
         Expression exp = Parser.parse("(foo)");
 
-        assertThat(exp, is((Expression) list(symbol("foo"))));
+        assertThat(exp, is(list(symbol("foo"))));
     }
 
     @Test
     public void parse_number() {
         Expression exp = Parser.parse("123");
 
-        assertThat(exp, is((Expression) number(123)));
+        assertThat(exp, is(number(123)));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class ParserTest {
                         number(1), number(2), number(3))));
     }
 
-
+    @SafeVarargs
     public static <T> List<T> listOf(T... elements) {
         return ImmutableList.copyOf(elements);
     }
