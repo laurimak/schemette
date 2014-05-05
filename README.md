@@ -7,4 +7,4 @@ Schemette is a small subset of [Scheme](http://www.r6rs.org/) implemented in Jav
 
 Why
 ---
-The purpose is to explorer the implementation of functional concepts in LISP and new features of Java 8, namely lambdas and streams.
+The purpose is to explore the implementation of functional concepts in Lisp and new features of Java 8, namely lambdas and streams.
