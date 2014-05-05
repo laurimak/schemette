@@ -128,7 +128,7 @@ public class Evaluator {
     }
 
     private static boolean isSpecialForm(Expression exp) {
-        return exp instanceof ListExpression && SPECIAL_FORMS.contains(exp.list().value.get(0).symbol());
+        return exp instanceof ListExpression && SPECIAL_FORMS.contains(exp.list().value.get(0));
     }
 
     private static boolean isFunctionCall(Expression exp) {
