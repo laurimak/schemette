@@ -18,130 +18,132 @@ public class Evaluator {
             .map(SymbolExpression::symbol)
             .collect(Collectors.toSet());
 
-    public static Expression evaluate(Expression e, Environment environment) {
-        if (isSelfEvaluating(e)) {
-            return e;
-        } else if (isVariableReference(e)) {
-            return environment.lookup((SymbolExpression) e);
-        } else if (isSpecialForm(e)) {
-            return evaluateSpecialForm(e, environment);
-        } else if (isFunctionCall(e)) {
-            return evaluateFunctionCall((ListExpression) e, environment);
+    public static Expression evaluate(Expression exp, Environment env) {
+        if (isSelfEvaluating(exp)) {
+            return exp;
+        } else if (isVariableReference(exp)) {
+            return env.lookup(exp.symbol());
+        } else if (isSpecialForm(exp)) {
+            return evaluateSpecialForm(exp.list(), env);
+        } else if (isFunctionCall(exp)) {
+            return evaluateFunctionCall(exp.list(), env);
         }
 
-        throw new IllegalArgumentException(String.format("Unable to evaluate expression '%s'", e));
+        throw new IllegalArgumentException(String.format("Unable to evaluate expression '%s'", exp));
     }
 
-    private static Expression evaluateSpecialForm(Expression e, Environment environment) {
-        List<Expression> exps = ((ListExpression) e).value;
-
-        switch (((SymbolExpression) exps.get(0)).value) {
+    private static Expression evaluateSpecialForm(ListExpression exp, Environment env) {
+        List<Expression> exps = exp.value;
+        switch (exps.get(0).symbol().value) {
             case "quote":
                 return exps.get(1);
             case "set!":
-                return evaluateSet(exps, environment);
+                return evaluateSet(exps, env);
             case "define":
-                return evaluateDefine(exps, environment);
+                return evaluateDefine(exps, env);
             case "if":
-                return evaluateIf(exps, environment);
+                return evaluateIf(exps, env);
             case "lambda":
-                return evaluateLambda((ListExpression) exps.get(1), exps.get(2), environment);
+                return evaluateLambda(exps.get(1).list(), exps.get(2), env);
             case "begin":
-                return evaluateBegin(exps, environment);
+                return evaluateBegin(exps, env);
             case "let":
-                return evaluateLet(exps, environment);
+                return evaluateLet(exps, env);
         }
 
-        throw new IllegalArgumentException(String.format("Invalid special form expression '%s'", e));
+        throw new IllegalArgumentException(String.format("Invalid special form expression '%s'", exp));
     }
 
-    private static Expression evaluateFunctionCall(ListExpression e, Environment environment) {
-        List<Expression> args = e.value.stream()
+    private static Expression evaluateFunctionCall(ListExpression exp, Environment env) {
+        List<Expression> args = exp.value.stream()
                 .skip(1)
-                .map((p) -> evaluate(p, environment))
+                .map((p) -> evaluate(p, env))
                 .collect(Collectors.toList());
-        return apply((ProcedureExpression) evaluate(e.value.get(0), environment), args);
+        return apply((ProcedureExpression) evaluate(exp.value.get(0), env), args);
     }
 
     private static Expression apply(ProcedureExpression procedure, List<Expression> args) {
         return procedure.lambda.apply(args);
     }
 
-    private static Expression evaluateLet(List<Expression> exps, Environment environment) {
-        List<Expression> bindings = ((ListExpression) exps.get(1)).value;
-        Map<SymbolExpression, Expression> nameToValue = bindings.stream()
-                .map(a -> (ListExpression) a)
-                .collect(Collectors.toMap(a -> (SymbolExpression) a.value.get(0), a -> evaluate(a.value.get(1), environment)));
+    private static Expression evaluateLet(List<Expression> exps, Environment env) {
+        Map<SymbolExpression, Expression> bindings = exps.get(1).list().value.stream()
+                .map(Expression::list)
+                .collect(Collectors.toMap(a -> a.value.get(0).symbol(),
+                        a -> evaluate(a.value.get(1), env)));
 
-        return lambda(exps.get(2), environment, ImmutableList.copyOf(nameToValue.keySet())).apply(ImmutableList.copyOf(nameToValue.values()));
+        return lambda(ImmutableList.copyOf(bindings.keySet()), exps.get(2), env)
+                .apply(ImmutableList.copyOf(bindings.values()));
     }
 
-    private static Expression evaluateBegin(List<Expression> exps, Environment environment) {
+    private static Expression evaluateBegin(List<Expression> exps, Environment env) {
         return exps.stream()
-                .reduce((a, b) -> evaluate(b, environment))
+                .reduce((a, b) -> evaluate(b, env))
                 .orElse(Expression.none());
     }
 
-    private static Expression evaluateIf(List<Expression> exps, Environment environment) {
-        if (isTruthy(evaluate(exps.get(1), environment))) {
-            return evaluate(exps.get(2), environment);
+    private static Expression evaluateIf(List<Expression> exps, Environment env) {
+        if (isTruthy(evaluate(exps.get(1), env))) {
+            return evaluate(exps.get(2), env);
         } else if (exps.size() > 3) {
-            return evaluate(exps.get(3), environment);
+            return evaluate(exps.get(3), env);
         } else {
             return Expression.none();
         }
     }
 
-    private static Expression evaluateDefine(List<Expression> exps, Environment environment) {
+    private static Expression evaluateDefine(List<Expression> exps, Environment env) {
         if (exps.get(1) instanceof SymbolExpression) {
-            environment.define((SymbolExpression) exps.get(1), evaluate(exps.get(2), environment));
+            env.define(exps.get(1).symbol(), evaluate(exps.get(2), env));
         } else {
-            List<Expression> nameAndParams = ((ListExpression) exps.get(1)).value;
-            SymbolExpression name = (SymbolExpression) nameAndParams.get(0);
+            SymbolExpression name = exps.get(1).list().value.get(0).symbol();
+            List<Expression> nameAndParams = exps.get(1).list().value;
             List<Expression> paramNames = nameAndParams.subList(1, nameAndParams.size());
 
-            environment.define(name, ProcedureExpression.procedure(lambda(exps.get(2), environment, paramNames)));
+            env.define(name, ProcedureExpression.procedure(lambda(paramNames, exps.get(2), env)));
         }
 
         return Expression.none();
     }
 
-    private static Expression evaluateSet(List<Expression> exps, Environment environment) {
-        environment.set((SymbolExpression) exps.get(1), evaluate(exps.get(2), environment));
+    private static Expression evaluateSet(List<Expression> exps, Environment env) {
+        env.set(exps.get(1).symbol(), evaluate(exps.get(2), env));
         return Expression.none();
     }
 
-    private static ProcedureExpression evaluateLambda(ListExpression paramNames, Expression body, Environment environment) {
-        List<Expression> names = paramNames.value;
-        return ProcedureExpression.procedure(lambda(body, environment, names));
+    private static ProcedureExpression evaluateLambda(ListExpression paramNames, Expression body, Environment env) {
+        return ProcedureExpression.procedure(lambda(paramNames.value, body, env));
     }
 
-    private static Function<List<Expression>, Expression> lambda(Expression body, Environment environment, List<Expression> names) {
-        return args ->
-                evaluate(body, new Environment(IntStream.range(0, names.size())
-                        .mapToObj(Integer::new)
-                        .map(i -> (Integer) i)
-                        .collect(Collectors.toMap(i -> (SymbolExpression) names.get(i),
-                                args::get)), environment));
+    private static Function<List<Expression>, Expression> lambda(List<Expression> names, Expression body, Environment env) {
+        return args -> evaluate(body, new Environment(makeMap(names, args), env));
     }
 
-    private static boolean isSpecialForm(Expression e) {
-        return e instanceof ListExpression && SPECIAL_FORMS.contains(((ListExpression) e).value.get(0));
+    private static Map<SymbolExpression, Expression> makeMap(List<Expression> names, List<Expression> args) {
+        return IntStream.range(0, names.size())
+                .mapToObj(Integer::new)
+                .map(i -> (Integer) i)
+                .collect(Collectors.toMap(i -> names.get(i).symbol(),
+                        args::get));
     }
 
-    private static boolean isFunctionCall(Expression e) {
-        return e instanceof ListExpression && ((ListExpression) e).value.size() > 0;
+    private static boolean isSpecialForm(Expression exp) {
+        return exp instanceof ListExpression && SPECIAL_FORMS.contains(exp.list().value.get(0).symbol());
     }
 
-    private static boolean isVariableReference(Expression e) {
-        return e instanceof SymbolExpression;
+    private static boolean isFunctionCall(Expression exp) {
+        return exp instanceof ListExpression && exp.list().value.size() > 0;
     }
 
-    private static boolean isSelfEvaluating(Expression e) {
-        return e instanceof NumberExpression || e instanceof BooleanExpression || e == Expression.none();
+    private static boolean isVariableReference(Expression exp) {
+        return exp instanceof SymbolExpression;
     }
 
-    private static boolean isTruthy(Expression evaluate) {
-        return !BooleanExpression.bool(false).equals(evaluate);
+    private static boolean isSelfEvaluating(Expression exp) {
+        return exp instanceof NumberExpression || exp instanceof BooleanExpression || exp == Expression.none();
+    }
+
+    private static boolean isTruthy(Expression exp) {
+        return !BooleanExpression.bool(false).equals(exp);
     }
 }

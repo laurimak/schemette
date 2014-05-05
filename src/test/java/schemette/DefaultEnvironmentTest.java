@@ -4,7 +4,6 @@ import org.junit.Test;
 import schemette.environment.DefaultEnvironment;
 import schemette.expressions.Expression;
 import schemette.expressions.NumberExpression;
-import schemette.expressions.ProcedureExpression;
 
 import java.util.Arrays;
 import java.util.List;
@@ -124,6 +123,6 @@ public class DefaultEnvironmentTest {
     }
 
     private Function<List<Expression>, Expression> lookupFunction(String operator) {
-        return ((ProcedureExpression) DefaultEnvironment.newInstance().lookup(symbol(operator))).lambda;
+        return DefaultEnvironment.newInstance().lookup(symbol(operator)).procedure().lambda;
     }
 }

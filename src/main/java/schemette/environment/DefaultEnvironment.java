@@ -43,7 +43,7 @@ public class DefaultEnvironment {
 
     private static boolean satisfiesTransitivePredicate(List<Expression> args, BiPredicate<Long, Long> predicate) {
         return IntStream.range(1, args.size())
-                .allMatch(i -> predicate.test(((NumberExpression) args.get(i - 1)).value, ((NumberExpression) args.get(i)).value));
+                .allMatch(i -> predicate.test(args.get(i - 1).number().value, args.get(i).number().value));
     }
 
     public static Environment newInstance() {
@@ -52,7 +52,7 @@ public class DefaultEnvironment {
 
     private static NumberExpression longFunction(List<Expression> args, BinaryOperator<Long> accumulator) {
         return args.stream()
-                .map(a -> ((NumberExpression) a).value)
+                .map(a -> a.number().value)
                 .reduce(accumulator)
                 .map(NumberExpression::number)
                 .get();
