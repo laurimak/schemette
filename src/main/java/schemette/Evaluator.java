@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 public class Evaluator {
 
-    private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin", "let").stream()
+    private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin", "let", "eval").stream()
             .map(SymbolExpression::symbol)
             .collect(Collectors.toSet());
 
@@ -49,6 +49,8 @@ public class Evaluator {
                 return evaluateBegin(exps, env);
             case "let":
                 return evaluateLet(exps, env);
+            case "eval":
+                return evaluateEval(exps, env);
         }
 
         throw new IllegalArgumentException(String.format("Invalid special form expression '%s'", exp));
@@ -113,6 +115,10 @@ public class Evaluator {
 
     private static ProcedureExpression evaluateLambda(ListExpression paramNames, Expression body, Environment env) {
         return ProcedureExpression.procedure(lambda(paramNames.value, body, env));
+    }
+
+    private static Expression evaluateEval(List<Expression> exps, Environment env) {
+        return evaluate(evaluate(exps.get(1), env), env);
     }
 
     private static Function<List<Expression>, Expression> lambda(List<Expression> names, Expression body, Environment env) {

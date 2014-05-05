@@ -27,7 +27,7 @@ public class Repl {
                 String output = print(result);
 
                 if (!output.isEmpty()) {
-                    out.println("->" + output);
+                    out.println("-> " + output);
                 }
             } catch (Throwable t) {
                 out.println("Error: " + t.getMessage());

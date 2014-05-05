@@ -42,4 +42,15 @@ public class IntegrationTest {
 
         assertThat(result, is(number(200)));
     }
+
+    @Test
+    public void eval() {
+        String input = "(eval (quote (+ 1 2)))";
+
+        Environment environment = DefaultEnvironment.newInstance();
+
+        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+
+        assertThat(result, is(number(3)));
+    }
 }
