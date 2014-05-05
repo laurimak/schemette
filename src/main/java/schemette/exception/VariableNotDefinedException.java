@@ -1,4 +1,4 @@
-package schemette;
+package schemette.exception;
 
 public class VariableNotDefinedException extends RuntimeException {
     public VariableNotDefinedException(String symbolName) {

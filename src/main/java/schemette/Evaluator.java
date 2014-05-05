@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static schemette.expressions.SymbolExpression.symbol;
-
 public class Evaluator {
 
     private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin").stream()
@@ -47,25 +45,37 @@ public class Evaluator {
     }
 
     private static Expression evaluateSpecialForm(Expression e, Environment environment) {
-        ListExpression l = (ListExpression) e;
-        if (isFirstSymbol(l, "quote")) {
-            return l.value.get(1);
-        } else if (isFirstSymbol(l, "set!")) {
-            environment.set((SymbolExpression) l.value.get(1), evaluate(l.value.get(2), environment));
+        List<Expression> exps = ((ListExpression) e).value;
+        String first = ((SymbolExpression) exps.get(0)).value;
+
+        if (first.equals("quote")) {
+            return exps.get(1);
+        } else if (first.equals("set!")) {
+            environment.set((SymbolExpression) exps.get(1), evaluate(exps.get(2), environment));
             return Expression.none();
-        } else if (isFirstSymbol(l, "define")) {
-            environment.define((SymbolExpression) l.value.get(1), evaluate(l.value.get(2), environment));
-            return Expression.none();
-        } else if (isFirstSymbol(l, "if")) {
-            if (truthy(evaluate(l.value.get(1), environment))) {
-                return evaluate(l.value.get(2), environment);
+        } else if (first.equals("define")) {
+            if (exps.get(1) instanceof SymbolExpression) {
+                environment.define((SymbolExpression) exps.get(1), evaluate(exps.get(2), environment));
             } else {
-                return evaluate(l.value.get(3), environment);
+                List<Expression> nameAndParams = ((ListExpression) exps.get(1)).value;
+                SymbolExpression name = (SymbolExpression) nameAndParams.get(0);
+                Expression body = exps.get(2);
+                List<Expression> paramNames = nameAndParams.subList(1, nameAndParams.size());
+
+                environment.define(name, makeProcedure(body, environment, paramNames));
             }
-        } else if (isFirstSymbol(l, "lambda")) {
-            return evaluateLambda((ListExpression) l.value.get(1), l.value.get(2), environment);
-        } else if (isFirstSymbol(l, "begin")) {
-            return l.value.stream()
+
+            return Expression.none();
+        } else if (first.equals("if")) {
+            if (truthy(evaluate(exps.get(1), environment))) {
+                return evaluate(exps.get(2), environment);
+            } else {
+                return evaluate(exps.get(3), environment);
+            }
+        } else if (first.equals("lambda")) {
+            return evaluateLambda((ListExpression) exps.get(1), exps.get(2), environment);
+        } else if (first.equals("begin")) {
+            return exps.stream()
                     .reduce((a, b) -> evaluate(b, environment))
                     .orElse(Expression.none());
         }
@@ -74,16 +84,17 @@ public class Evaluator {
     }
 
     private static ProcedureExpression evaluateLambda(ListExpression paramNames, Expression body, Environment environment) {
-        return ProcedureExpression.procedure((args) -> {
-            Environment lambdaEnvironment = new Environment(new HashMap<>(), environment);
-            IntStream.range(0, paramNames.value.size())
-                    .forEach((i) -> lambdaEnvironment.define((SymbolExpression) paramNames.value.get(i), args.get(i)));
-            return evaluate(body, lambdaEnvironment);
-        });
+        List<Expression> names = paramNames.value;
+        return makeProcedure(body, environment, names);
     }
 
-    private static boolean isFirstSymbol(ListExpression l, String string) {
-        return l.value.get(0).equals(symbol(string));
+    private static ProcedureExpression makeProcedure(Expression body, Environment environment, List<Expression> names) {
+        return ProcedureExpression.procedure((args) -> {
+            Environment lambdaEnvironment = new Environment(new HashMap<>(), environment);
+            IntStream.range(0, names.size())
+                    .forEach((i) -> lambdaEnvironment.define((SymbolExpression) names.get(i), args.get(i)));
+            return evaluate(body, lambdaEnvironment);
+        });
     }
 
     private static boolean isFunctionCall(Expression e) {
@@ -103,7 +114,7 @@ public class Evaluator {
         return primitiveProcedure.lambda.apply(paramVals);
     }
 
-    private static boolean truthy(Object evaluate) {
+    private static boolean truthy(Expression evaluate) {
         return !BooleanExpression.bool(false).equals(evaluate);
     }
 }

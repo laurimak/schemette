@@ -1,5 +1,7 @@
 package schemette.expressions;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.List;
 
 public class ListExpression implements Expression {
@@ -9,8 +11,12 @@ public class ListExpression implements Expression {
         this.value = value;
     }
 
-    public static ListExpression valueOf(List<Expression> list) {
+    public static ListExpression list(List<Expression> list) {
         return new ListExpression(list);
+    }
+
+    public static ListExpression list(Expression... exps) {
+        return ListExpression.list(ImmutableList.copyOf(exps));
     }
 
     @Override
@@ -25,7 +31,7 @@ public class ListExpression implements Expression {
 
     public String toString() {
         return String.format("list(%s)", value.stream()
-                .map(Expression::toString)
+                .map(Object::toString)
                 .reduce((a, b) -> a + ", " + b)
                 .orElse(""));
     }

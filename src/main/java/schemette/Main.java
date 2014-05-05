@@ -12,9 +12,9 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print(": ");
-            String line = scanner.nextLine();
-            Expression parse = Parser.parse(line);
-            System.out.println(Evaluator.evaluate(parse, environment));
+            Expression parse = Reader.read(scanner.nextLine());
+            Expression result = Evaluator.evaluate(parse, environment);
+            System.out.println(result);
         }
     }
 }

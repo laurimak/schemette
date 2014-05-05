@@ -11,8 +11,8 @@ import java.util.Map;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
-import static schemette.TestUtil.list;
 import static schemette.expressions.BooleanExpression.bool;
+import static schemette.expressions.ListExpression.list;
 import static schemette.expressions.NumberExpression.number;
 import static schemette.expressions.SymbolExpression.symbol;
 
@@ -127,10 +127,20 @@ public class EvaluatorTest {
         Environment environment = new Environment(bindings(symbol("foo"), number(123)), DefaultEnvironment.newInstance());
         ListExpression exp = list(symbol("begin"), list(symbol("set!"), symbol("foo"), number(321)), list(symbol("+"), symbol("foo"), number(1)));
 
-        Object result = Evaluator.evaluate(exp, environment);
+        Expression result = Evaluator.evaluate(exp, environment);
 
         assertThat(result, is(number(322)));
 
+    }
+
+    @Test
+    public void define_function() {
+        Environment environment = emptyEnvironment();
+        ListExpression exp = list(symbol("define"), list(symbol("foo"), symbol("a"), symbol("b")), number(1));
+
+        Evaluator.evaluate(exp, environment);
+
+        assertThat(environment.lookup(symbol("foo")), is(instanceOf(ProcedureExpression.class)));
     }
 
     private static Environment emptyEnvironment() {

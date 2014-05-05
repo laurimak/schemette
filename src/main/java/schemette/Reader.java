@@ -1,5 +1,6 @@
 package schemette;
 
+import schemette.exception.UnmatchedParenthesisExpection;
 import schemette.expressions.Expression;
 import schemette.expressions.ListExpression;
 import schemette.expressions.NumberExpression;
@@ -11,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Parser {
+public class Reader {
     public static List<String> tokenize(String input) {
         return Arrays.stream(input
                 .replace("(", " ( ")
@@ -22,23 +23,42 @@ public class Parser {
                 .collect(Collectors.toList());
     }
 
-    public static Expression parse(String input) {
+    public static Expression read(String input) {
         List<String> tokens = tokenize(input);
+        assertParensMatch(tokens);
         List<Expression> exps = parseSequence(tokens.iterator());
         if (exps.size() == 1) {
             return exps.get(0);
         }
-        return ListExpression.valueOf(exps);
+        return ListExpression.list(exps);
+    }
+
+    private static void assertParensMatch(List<String> tokens) {
+        int openLists = tokens.stream()
+                .filter(t -> t.equals("(") || t.equals(")"))
+                .map(t -> t.equals("(") ? 1 : -1)
+                .reduce(0, (a, b) -> {
+                    if (a + b < 0) {
+                        throw new UnmatchedParenthesisExpection("Too many closed parenthesis ')'");
+                    }
+                    return a + b;
+                });
+
+        if (openLists > 0) {
+            throw new UnmatchedParenthesisExpection("Too many open parenthesis '('");
+        }
     }
 
     private static List<Expression> parseSequence(Iterator<String> i) {
         List<Expression> result = new ArrayList<>();
         while (i.hasNext()) {
             String token = i.next();
-            if ("(".equals(token)) {
-                result.add(ListExpression.valueOf(parseSequence(i)));
-            } else if (")".equals(token)) {
+            if (")".equals(token)) {
                 return result;
+            }
+
+            if ("(".equals(token)) {
+                result.add(ListExpression.list(parseSequence(i)));
             } else {
                 result.add(symbolOrNumber(token));
             }

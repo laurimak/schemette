@@ -1,6 +1,6 @@
 package schemette.environment;
 
-import schemette.VariableNotDefinedException;
+import schemette.exception.VariableNotDefinedException;
 import schemette.expressions.Expression;
 import schemette.expressions.SymbolExpression;
 
