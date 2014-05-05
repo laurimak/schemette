@@ -25,11 +25,18 @@ public class Reader {
 
     public static Expression read(String input) {
         List<String> tokens = tokenize(input);
+
         assertParensMatch(tokens);
         List<Expression> exps = parseSequence(tokens.iterator());
+
+        if (exps.isEmpty()) {
+            return Expression.none();
+        }
+
         if (exps.size() == 1) {
             return exps.get(0);
         }
+
         return ListExpression.list(exps);
     }
 

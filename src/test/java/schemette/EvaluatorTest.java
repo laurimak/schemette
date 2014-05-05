@@ -95,6 +95,15 @@ public class EvaluatorTest {
     }
 
     @Test
+    public void if_expression_false_no_else() {
+        ListExpression exp = list(symbol("if"), bool(false), number(1));
+
+        Expression result = Evaluator.evaluate(exp, emptyEnvironment());
+
+        assertThat(result, is(Expression.none()));
+    }
+
+    @Test
     public void lambda_expression() {
         ListExpression exp = list(symbol("lambda"), list(), list());
 

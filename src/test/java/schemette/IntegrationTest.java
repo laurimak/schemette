@@ -31,6 +31,15 @@ public class IntegrationTest {
         Expression result = Evaluator.evaluate(Reader.read("(fib 10)"), environment);
 
         assertThat(result, is(number(55)));
+    }
 
+    @Test
+    public void let() {
+        String input = "(let ((x 10) (y 20)) (* x y))";
+        Environment environment = DefaultEnvironment.newInstance();
+
+        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+
+        assertThat(result, is(number(200)));
     }
 }
