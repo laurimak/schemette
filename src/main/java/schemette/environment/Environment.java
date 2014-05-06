@@ -26,7 +26,7 @@ public class Environment {
         } else if (enclosingEnvironment != null) {
             return enclosingEnvironment.lookup(symbol);
         }
-        throw new VariableNotDefinedException(symbol.toString());
+        throw new VariableNotDefinedException(symbol.value);
     }
 
     public void set(SymbolExpression symbol, Expression value) {
@@ -35,7 +35,7 @@ public class Environment {
         } else if (enclosingEnvironment != null) {
             enclosingEnvironment.set(symbol, value);
         } else {
-            throw new VariableNotDefinedException(symbol.toString());
+            throw new VariableNotDefinedException(symbol.value);
         }
     }
 

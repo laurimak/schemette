@@ -24,10 +24,7 @@ public class Reader {
     }
 
     public static Expression read(String input) {
-        List<String> tokens = tokenize(input);
-
-        assertParensMatch(tokens);
-        List<Expression> exps = parseSequence(tokens.iterator());
+        List<Expression> exps = parseSequence(tokenize(input).iterator());
 
         if (exps.isEmpty()) {
             return Expression.none();
@@ -40,8 +37,8 @@ public class Reader {
         return ListExpression.list(exps);
     }
 
-    private static void assertParensMatch(List<String> tokens) {
-        int openLists = tokens.stream()
+    public static int countOpenParens(String input) {
+        return tokenize(input).stream()
                 .filter(t -> t.equals("(") || t.equals(")"))
                 .map(t -> t.equals("(") ? 1 : -1)
                 .reduce(0, (a, b) -> {
@@ -50,10 +47,6 @@ public class Reader {
                     }
                     return a + b;
                 });
-
-        if (openLists > 0) {
-            throw new UnmatchedParenthesisExpection("Too many open parenthesis '('");
-        }
     }
 
     private static List<Expression> parseSequence(Iterator<String> i) {

@@ -22,4 +22,8 @@ public interface Expression {
     default SymbolExpression symbol() {
         return (SymbolExpression) this;
     }
+
+    default BooleanExpression bool() {
+        return (BooleanExpression) this;
+    }
 }
