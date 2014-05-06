@@ -8,3 +8,14 @@ Schemette is a small subset of [Scheme](http://www.r6rs.org/) implemented in Jav
 Why
 ---
 The purpose is to explore the implementation of functional concepts in Lisp and new features of Java 8, namely lambdas and streams.
+
+How
+---
+
+Java 8 is required to run Schemette.
+
+Run using maven with the following command.
+
+```bash
+mvn clean compile exec:java -Dexec.mainClass="schemette.Repl"
+```
