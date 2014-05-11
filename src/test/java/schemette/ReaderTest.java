@@ -76,10 +76,7 @@ public class ReaderTest {
 
     @Test
     public void too_many_open_parens() {
-        thrown.expect(UnmatchedParenthesisExpection.class);
-        thrown.expectMessage("Too many open parenthesis '('");
-
-        Reader.read("((()");
+        assertThat(Reader.countOpenParens("((()"), is(2));
     }
 
     @Test
@@ -87,7 +84,7 @@ public class ReaderTest {
         thrown.expect(UnmatchedParenthesisExpection.class);
         thrown.expectMessage("Too many closed parenthesis ')'");
 
-        Reader.read("((())()))))");
+        Reader.countOpenParens("((())()))))");
     }
 
 

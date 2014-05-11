@@ -133,7 +133,7 @@ public class EvaluatorTest {
 
     @Test
     public void begin() {
-        Environment environment = new Environment(bindings(symbol("foo"), number(123)), DefaultEnvironment.newInstance());
+        Environment environment = DefaultEnvironment.newInstance().extend(bindings(symbol("foo"), number(123)));
         ListExpression exp = list(symbol("begin"), list(symbol("set!"), symbol("foo"), number(321)), list(symbol("+"), symbol("foo"), number(1)));
 
         Expression result = Evaluator.evaluate(exp, environment);

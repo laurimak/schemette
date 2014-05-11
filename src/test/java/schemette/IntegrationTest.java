@@ -1,8 +1,11 @@
 package schemette;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import schemette.environment.DefaultEnvironment;
 import schemette.environment.Environment;
+import schemette.exception.UnexpectedExpression;
 import schemette.expressions.Expression;
 
 import static org.hamcrest.core.Is.is;
@@ -10,6 +13,9 @@ import static org.junit.Assert.assertThat;
 import static schemette.expressions.NumberExpression.number;
 
 public class IntegrationTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void factorial() {
@@ -52,5 +58,42 @@ public class IntegrationTest {
         Expression result = Evaluator.evaluate(Reader.read(input), environment);
 
         assertThat(result, is(number(3)));
+    }
+
+    @Test
+    public void define_function_sequence() {
+        String input = "(define (foo) (define a 10) a)";
+
+        Environment environment = DefaultEnvironment.newInstance();
+
+        Evaluator.evaluate(Reader.read(input), environment);
+        Expression result = Evaluator.evaluate(Reader.read("(foo)"), environment);
+
+        assertThat(result, is(number(10)));
+
+    }
+
+    @Test
+    public void lambda_sequence() {
+        String input = "((lambda () (define a 10) a))";
+
+        Environment environment = DefaultEnvironment.newInstance();
+
+        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+
+        assertThat(result, is(number(10)));
+
+    }
+
+    @Test
+    public void unexpected_expression() {
+        thrown.expect(UnexpectedExpression.class);
+        thrown.expectMessage("Expected expression of type 'ListExpression', got 'symbol(a)'");
+
+        String input = "(lambda a b)";
+
+        Environment environment = DefaultEnvironment.newInstance();
+
+        Evaluator.evaluate(Reader.read(input), environment);
     }
 }

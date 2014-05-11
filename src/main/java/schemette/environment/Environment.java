@@ -4,13 +4,14 @@ import schemette.exception.VariableNotDefinedException;
 import schemette.expressions.Expression;
 import schemette.expressions.SymbolExpression;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class Environment {
     public final Map<SymbolExpression, Expression> bindings;
     public final Environment enclosingEnvironment;
 
-    public Environment(Map<SymbolExpression, Expression> bindings, Environment enclosingEnvironment) {
+    private Environment(Map<SymbolExpression, Expression> bindings, Environment enclosingEnvironment) {
         this.bindings = bindings;
         this.enclosingEnvironment = enclosingEnvironment;
     }
@@ -19,6 +20,13 @@ public class Environment {
         this(bindings, null);
     }
 
+    public Environment extend(Map<SymbolExpression, Expression> bindings) {
+        return new Environment(bindings, this);
+    }
+
+    public Environment extend() {
+        return new Environment(new HashMap<>(), this);
+    }
 
     public Expression lookup(SymbolExpression symbol) {
         if (bindings.containsKey(symbol)) {

@@ -1,29 +1,43 @@
 package schemette.expressions;
 
-public interface Expression {
-    static final Expression NONE = new Expression() {};
+import schemette.exception.UnexpectedExpression;
 
-    public static Expression none() {
+public interface Expression {
+    static final Expression NONE = new Expression() {
+        public String toString() {
+            return "none()";
+        }
+    };
+
+    static Expression none() {
         return NONE;
     }
 
+    default <T extends Expression> T assertExpressionOfType(Class<T> type) {
+        if (!type.isAssignableFrom(this.getClass())) {
+            throw new UnexpectedExpression(String.format("Expected expression of type '%s', got '%s'", type.getSimpleName(), this));
+        }
+
+        return type.cast(this);
+    }
+
     default ListExpression list() {
-        return (ListExpression) this;
+        return assertExpressionOfType(ListExpression.class);
     }
 
     default NumberExpression number() {
-        return (NumberExpression) this;
+        return assertExpressionOfType(NumberExpression.class);
     }
 
     default ProcedureExpression procedure() {
-        return (ProcedureExpression) this;
+        return assertExpressionOfType(ProcedureExpression.class);
     }
 
     default SymbolExpression symbol() {
-        return (SymbolExpression) this;
+        return assertExpressionOfType(SymbolExpression.class);
     }
 
     default BooleanExpression bool() {
-        return (BooleanExpression) this;
+        return assertExpressionOfType(BooleanExpression.class);
     }
 }
