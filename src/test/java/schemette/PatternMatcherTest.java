@@ -192,7 +192,8 @@ public class PatternMatcherTest {
     }
 
     private static <T> List<List<T>> split(List<T> list, T e) {
-        return splitRecur(new ArrayList<>(), list, e);
+        List<List<T>> lists = new ArrayList<>();
+        return splitRecur(lists, list, e);
     }
 
     private static <T> List<List<T>> splitRecur(List<List<T>> sum, List<T> list, T e) {
