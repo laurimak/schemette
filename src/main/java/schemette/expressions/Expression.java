@@ -14,11 +14,15 @@ public interface Expression {
     }
 
     default <T extends Expression> T assertExpressionOfType(Class<T> type) {
-        if (!type.isAssignableFrom(this.getClass())) {
+        if (!instanceOf(type)) {
             throw new UnexpectedExpression(String.format("Expected expression of type '%s', got '%s'", type.getSimpleName(), this));
         }
 
         return type.cast(this);
+    }
+
+    default <T extends Expression> boolean instanceOf(Class<T> type) {
+        return type.isAssignableFrom(this.getClass());
     }
 
     default ListExpression list() {
@@ -40,4 +44,22 @@ public interface Expression {
     default BooleanExpression bool() {
         return assertExpressionOfType(BooleanExpression.class);
     }
+
+    default boolean isList() {
+        return instanceOf(ListExpression.class);
+    }
+
+    default boolean isSymbol() {
+        return instanceOf(SymbolExpression.class);
+    }
+
+    default boolean isNumber() {
+        return instanceOf(NumberExpression.class);
+    }
+
+    default boolean isBoolean() {
+        return instanceOf(BooleanExpression.class);
+    }
+
+
 }
