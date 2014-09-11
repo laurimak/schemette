@@ -4,46 +4,40 @@ import schemette.exception.VariableNotDefinedException;
 import schemette.expressions.Expression;
 import schemette.expressions.SymbolExpression;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class Environment {
     public final Map<SymbolExpression, Expression> bindings;
-    public final Environment enclosingEnvironment;
+    public final Optional<Environment> enclosingEnvironment;
 
-    private Environment(Map<SymbolExpression, Expression> bindings, Environment enclosingEnvironment) {
+    private Environment(Map<SymbolExpression, Expression> bindings, Optional<Environment> enclosingEnvironment) {
         this.bindings = bindings;
         this.enclosingEnvironment = enclosingEnvironment;
     }
 
     public Environment(Map<SymbolExpression, Expression> bindings) {
-        this(bindings, null);
+        this(bindings, Optional.empty());
     }
 
     public Environment extend(Map<SymbolExpression, Expression> bindings) {
-        return new Environment(bindings, this);
-    }
-
-    public Environment extend() {
-        return new Environment(new HashMap<>(), this);
+        return new Environment(bindings, Optional.of(this));
     }
 
     public Expression lookup(SymbolExpression symbol) {
-        if (bindings.containsKey(symbol)) {
-            return bindings.get(symbol);
-        } else if (enclosingEnvironment != null) {
-            return enclosingEnvironment.lookup(symbol);
-        }
-        throw new VariableNotDefinedException(symbol.value);
+        return Optional.ofNullable(bindings.get(symbol))
+                .orElseGet(() -> enclosingEnvironment
+                        .map(e -> e.lookup(symbol))
+                        .orElseThrow(() -> new VariableNotDefinedException(symbol.value)));
     }
 
     public void set(SymbolExpression symbol, Expression value) {
         if (bindings.containsKey(symbol)) {
             bindings.put(symbol, value);
-        } else if (enclosingEnvironment != null) {
-            enclosingEnvironment.set(symbol, value);
         } else {
-            throw new VariableNotDefinedException(symbol.value);
+            enclosingEnvironment
+                    .orElseThrow(() -> new VariableNotDefinedException(symbol.value))
+                    .set(symbol, value);
         }
     }
 
@@ -53,26 +47,17 @@ public class Environment {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
+        if (getClass() != o.getClass()) {
             return false;
         }
 
         Environment that = (Environment) o;
 
-        if (bindings != null ? !bindings.equals(that.bindings) : that.bindings != null) {
-            return false;
-        }
-        if (enclosingEnvironment != null ? !enclosingEnvironment.equals(that.enclosingEnvironment) : that.enclosingEnvironment != null) {
-            return false;
-        }
-
-        return true;
+        return !(!bindings.equals(that.bindings) || !enclosingEnvironment.equals(that.enclosingEnvironment));
     }
 
     @Override
     public int hashCode() {
-        int result = bindings != null ? bindings.hashCode() : 0;
-        result = 31 * result + (enclosingEnvironment != null ? enclosingEnvironment.hashCode() : 0);
-        return result;
+        return 31 * bindings.hashCode() + enclosingEnvironment.hashCode();
     }
 }

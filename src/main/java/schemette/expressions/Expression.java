@@ -45,6 +45,10 @@ public interface Expression {
         return assertExpressionOfType(BooleanExpression.class);
     }
 
+    default SyntaxRulesExpression syntaxRules() {
+        return assertExpressionOfType(SyntaxRulesExpression.class);
+    }
+
     default boolean isList() {
         return instanceOf(ListExpression.class);
     }
@@ -61,5 +65,11 @@ public interface Expression {
         return instanceOf(BooleanExpression.class);
     }
 
+    default boolean isProcedure() {
+        return instanceOf(ProcedureExpression.class);
+    }
 
+    default boolean isSyntaxRules() {
+        return instanceOf(SyntaxRulesExpression.class);
+    }
 }

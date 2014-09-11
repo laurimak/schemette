@@ -7,7 +7,9 @@ import schemette.environment.DefaultEnvironment;
 import schemette.environment.Environment;
 import schemette.exception.UnexpectedExpression;
 import schemette.expressions.Expression;
+import schemette.expressions.SyntaxRulesExpression;
 
+import static java.util.Collections.emptyList;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static schemette.expressions.NumberExpression.number;
@@ -84,6 +86,31 @@ public class IntegrationTest {
         assertThat(result, is(number(10)));
 
     }
+
+    @Test
+    public void syntax_rules_expression() {
+        String input = "(syntax-rules () ((sqr a) (* a a)))";
+
+        Environment environment = DefaultEnvironment.newInstance();
+
+        SyntaxRulesExpression result = Evaluator.evaluate(Reader.read(input), environment).syntaxRules();
+
+        assertThat(result.keywords, is(emptyList()));
+        assertThat(result.patternToTemplate.get(Reader.read("(sqr a)")), is(Reader.read("(* a a)")));
+    }
+
+    @Test
+    public void syntax_rules_expression2() {
+        String input = "((syntax-rules () ((sqr a) (* a a))) 2)";
+
+        Environment environment = DefaultEnvironment.newInstance();
+
+        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+
+        assertThat(result, is(number(4)));
+    }
+
+
 
     @Test
     public void unexpected_expression() {

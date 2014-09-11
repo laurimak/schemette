@@ -1,20 +1,22 @@
 package schemette;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.LinkedListMultimap;
 import schemette.environment.Environment;
+import schemette.environment.PatternMatcher;
 import schemette.expressions.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toList;
+
 public class Evaluator {
 
-    private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin", "let", "eval").stream()
+    private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin", "let", "eval", "syntax-rules").stream()
             .map(SymbolExpression::symbol)
             .collect(Collectors.toSet());
 
@@ -23,6 +25,7 @@ public class Evaluator {
     }
 
     public static Function<Environment, Expression> analyze(Expression exp) {
+        System.out.println(exp);
         if (isSelfEvaluating(exp)) {
             return e -> exp;
         } else if (exp.isSymbol()) {
@@ -60,10 +63,41 @@ public class Evaluator {
                 return analyzeLet(exps);
             case "eval":
                 return analyzeEval(exps);
+            case "syntax-rules":
+                return analyzeSyntaxRules(exps);
         }
 
         throw new IllegalArgumentException(String.format("Invalid special form expression '%s'", exp));
 
+    }
+
+    private static Function<Environment, Expression> analyzeSyntaxRules(List<Expression> exps) {
+        List<String> literals = exps.get(1).list().value.stream()
+                .map(e -> e.symbol().value)
+                .collect(toList());
+
+        List<Expression> patterns = rest(rest(exps)).stream()
+                .map(Expression::list)
+                .map(e -> e.value.get(0))
+                .collect(toList());
+
+        List<Expression> templates = rest(rest(exps)).stream()
+                .map(Expression::list)
+                .map(e -> e.value.get(1))
+                .collect(toList());
+
+
+        ImmutableMap.Builder<Expression, Expression> map = ImmutableMap.builder();
+
+        for (int i = 0; i < patterns.size(); i++) {
+            map.put(patterns.get(i), templates.get(i));
+        }
+
+        return env -> {
+            Expression expression = SyntaxRulesExpression.syntaxRules(literals, map.build());
+            System.out.println(expression);
+            return expression;
+        };
     }
 
     private static Function<Environment, Expression> analyzeQuote(List<Expression> exps) {
@@ -73,7 +107,7 @@ public class Evaluator {
     private static Function<Environment, Expression> analyzeLambda(List<Expression> exps) {
         List<SymbolExpression> paramNames = exps.get(1).list().value.stream()
                 .map(Expression::symbol)
-                .collect(Collectors.toList());
+                .collect(toList());
         return analyzeProcedure(paramNames, exps);
     }
 
@@ -91,7 +125,7 @@ public class Evaluator {
         SymbolExpression name = exps.get(1).list().value.get(0).symbol();
         List<SymbolExpression> paramNames = rest(exps.get(1).list().value).stream()
                 .map(Expression::symbol)
-                .collect(Collectors.toList());
+                .collect(toList());
         Function<Environment, Expression> lambda = analyzeProcedure(paramNames, exps);
         return env -> {
             env.define(name, lambda.apply(env));
@@ -113,15 +147,27 @@ public class Evaluator {
     }
 
     private static Function<Environment, Expression> analyzeFunctionCall(ListExpression exp) {
-        List<Function<Environment, Expression>> map = exp.value.stream()
+        List<Function<Environment, Expression>> params = exp.value.stream()
                 .map(Evaluator::analyze)
-                .collect(Collectors.toList());
+                .collect(toList());
+
+        System.out.println("exp = [" + exp + "]");
 
         return env -> {
-            List<Expression> list = map.stream()
-                    .map(e -> e.apply(env))
-                    .collect(Collectors.toList());
-            return list.get(0).procedure().lambda.apply(rest(list));
+            Expression apply = params.get(0).apply(env);
+            if (apply.isProcedure()) {
+                return apply.procedure().lambda.apply(rest(params).stream()
+                        .map(e -> e.apply(env)).collect(toList()));
+            } else {
+                for (Map.Entry<Expression, Expression> e : apply.syntaxRules().patternToTemplate.entrySet()) {
+                    LinkedListMultimap<String, Expression> bindings = LinkedListMultimap.create();
+                    if (PatternMatcher.matches(apply.syntaxRules().keywords, bindings, e.getKey(), exp)) {
+                        return analyze(PatternMatcher.expandTemplate(bindings, e.getValue())).apply(env);
+                    }
+                }
+            }
+
+            throw new IllegalStateException("TODO");
         };
     }
 
@@ -136,7 +182,7 @@ public class Evaluator {
         return env -> {
             List<Expression> letParams = letBindingValues.stream()
                     .map(a -> a.apply(env))
-                    .collect(Collectors.toList());
+                    .collect(toList());
             return letBody.apply(env).procedure().lambda.apply(letParams);
         };
     }
@@ -144,14 +190,14 @@ public class Evaluator {
     private static List<SymbolExpression> letBindingSymbols(List<Expression> exps) {
         return exps.get(1).list().value.stream()
                 .map(e -> e.list().value.get(0).symbol())
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     private static List<Function<Environment, Expression>> letBindingValues(List<Expression> exps) {
         return exps.get(1).list().value.stream()
                 .map(e -> e.list().value.get(1))
                 .map(Evaluator::analyze)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     private static Function<Environment, Expression> analyzeBegin(List<Expression> exps) {
@@ -161,7 +207,7 @@ public class Evaluator {
     private static Function<Environment, Expression> analyzeSequence(List<Expression> exps) {
         List<Function<Environment, Expression>> seq = exps.stream()
                 .map(Evaluator::analyze)
-                .collect(Collectors.toList());
+                .collect(toList());
 
         return env -> seq.stream()
                         .collect(Collectors.reducing(Expression.none(), a -> a.apply(env), (a, b) -> b));
