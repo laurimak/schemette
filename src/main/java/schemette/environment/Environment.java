@@ -4,7 +4,6 @@ import schemette.exception.VariableNotDefinedException;
 import schemette.expressions.Expression;
 import schemette.expressions.SymbolExpression;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Environment {
@@ -24,9 +23,6 @@ public class Environment {
         return new Environment(bindings, this);
     }
 
-    public Environment extend() {
-        return new Environment(new HashMap<>(), this);
-    }
 
     public Expression lookup(SymbolExpression symbol) {
         if (bindings.containsKey(symbol)) {

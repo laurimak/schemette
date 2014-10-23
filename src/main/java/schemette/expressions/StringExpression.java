@@ -1,20 +1,19 @@
 package schemette.expressions;
 
-public class SymbolExpression implements Expression {
-
+public class StringExpression implements Expression {
     public final String value;
 
-    public SymbolExpression(String value) {
+    public StringExpression(String value) {
         this.value = value;
     }
 
-    public static SymbolExpression symbol(String s) {
-        return new SymbolExpression(s);
+    public static StringExpression string(String s) {
+        return new StringExpression(s);
     }
 
     @Override
     public boolean equals(Object o) {
-        return getClass() == o.getClass() && value.equals(((SymbolExpression) o).value);
+        return getClass() == o.getClass() && value.equals(((StringExpression) o).value);
     }
 
     @Override
@@ -23,7 +22,7 @@ public class SymbolExpression implements Expression {
     }
 
     public String toString() {
-        return String.format("symbol(%s)", value);
+        return String.format("string(\"%s\")", value);
     }
 
     @Override

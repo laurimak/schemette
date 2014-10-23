@@ -8,9 +8,9 @@ import schemette.expressions.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertThat;
 import static schemette.expressions.BooleanExpression.bool;
 import static schemette.expressions.ListExpression.list;
 import static schemette.expressions.NumberExpression.number;
@@ -149,7 +149,8 @@ public class EvaluatorTest {
 
         Evaluator.evaluate(exp, environment);
 
-        assertThat(environment.lookup(symbol("foo")), is(instanceOf(ProcedureExpression.class)));
+        Expression value = environment.lookup(symbol("foo"));
+        assertThat(value instanceof ProcedureExpression, is(true));
     }
 
     private static Environment emptyEnvironment() {

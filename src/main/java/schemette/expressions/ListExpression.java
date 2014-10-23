@@ -1,22 +1,41 @@
 package schemette.expressions;
 
-import com.google.common.collect.ImmutableList;
+import schemette.cons.Cons;
 
-import java.util.List;
+import java.util.stream.Collectors;
+
+import static schemette.cons.Cons.*;
+import static schemette.expressions.ListExpression.Nil.nil;
 
 public class ListExpression implements Expression {
-    public final List<Expression> value;
+    public static class Nil extends ListExpression {
+        private static final Nil NIL = new Nil();
 
-    public ListExpression(List<Expression> value) {
+        private Nil() {
+            super(Cons.<Expression>empty());
+        }
+
+        public static Nil nil() {
+            return NIL;
+        }
+    }
+
+    public final Cons<Expression> value;
+
+    private ListExpression(Cons<Expression> value) {
         this.value = value;
     }
 
-    public static ListExpression list(List<Expression> list) {
+    public static ListExpression list(Cons<Expression> list) {
+        if (list == Cons.<Expression>empty()) {
+            return nil();
+        }
+
         return new ListExpression(list);
     }
 
     public static ListExpression list(Expression... exps) {
-        return ListExpression.list(ImmutableList.copyOf(exps));
+        return ListExpression.list(copyOf(exps));
     }
 
     @Override
@@ -34,5 +53,12 @@ public class ListExpression implements Expression {
                 .map(Object::toString)
                 .reduce((a, b) -> a + ", " + b)
                 .orElse(""));
+    }
+
+    @Override
+    public String print() {
+        return String.format("(%s)", value.stream()
+                .map(Expression::print)
+                .collect(Collectors.joining(" ")));
     }
 }

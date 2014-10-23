@@ -7,6 +7,7 @@ import org.junit.rules.ExpectedException;
 import schemette.exception.UnmatchedParenthesisExpection;
 import schemette.expressions.Expression;
 
+import java.util.Iterator;
 import java.util.List;
 
 import static org.hamcrest.core.Is.is;
@@ -43,28 +44,29 @@ public class ReaderTest {
 
     @Test
     public void parse() {
-        Expression exp = Reader.read("foo");
+        Expression exp = read("foo");
 
         assertThat(exp, is(symbol("foo")));
     }
 
+
     @Test
     public void parse2() {
-        Expression exp = Reader.read("(foo)");
+        Expression exp = read("(foo)");
 
         assertThat(exp, is(list(symbol("foo"))));
     }
 
     @Test
     public void parse_number() {
-        Expression exp = Reader.read("123");
+        Expression exp = read("123");
 
         assertThat(exp, is(number(123)));
     }
 
     @Test
     public void parse_complex() {
-        Expression exp = Reader.read("((lambda (a b c) (+ (- a b) c)) 1 2 3)");
+        Expression exp = read("((lambda (a b c) (+ (- a b) c)) 1 2 3)");
 
         assertThat(exp, is((Expression)
                 list(
@@ -87,6 +89,16 @@ public class ReaderTest {
         Reader.countOpenParens("((())()))))");
     }
 
+    @Test
+    public void foo() {
+        Iterator<Expression> exps = Reader.read("1 2").iterator();
+        assertThat(exps.next(), is(number(1)));
+        assertThat(exps.next(), is(number(2)));
+    }
+
+    private Expression read(String foo) {
+        return Reader.read(foo).iterator().next();
+    }
 
     @SafeVarargs
     public static <T> List<T> listOf(T... elements) {

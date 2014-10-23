@@ -2,37 +2,44 @@ package schemette;
 
 import schemette.environment.DefaultEnvironment;
 import schemette.environment.Environment;
-import schemette.expressions.*;
+import schemette.expressions.Expression;
 
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.Scanner;
+import java.io.*;
 import java.util.stream.IntStream;
 
 public class Repl {
+    public static final Environment ENV = DefaultEnvironment.newInstance();
+    public static final PrintStream OUTPUT_STREAM = System.out;
+    public static final InputStream INPUT_STREAM = System.in;
+
     public static void main(String[] args) {
-        repl(System.in, System.out);
+        repl(INPUT_STREAM, OUTPUT_STREAM);
     }
 
     private static void repl(InputStream in, PrintStream out) {
-        Scanner scanner = new Scanner(in);
-        Environment environment = DefaultEnvironment.newInstance();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
 
         String input = "";
         prompt(out, 0);
 
         while (true) {
             try {
-                input += " " + scanner.nextLine();
+                do {
+                    input += bufferedReader.readLine() + "\n";
+                } while (bufferedReader.ready());
+
                 if (completeExpression(input)) {
-                    Expression result = Evaluator.evaluate(Reader.read(input), environment);
-                    out.print(print(result));
+                    Iterable<Expression> exps = Reader.read(input);
+                    for (Expression exp : exps) {
+                        out.print(print(Evaluator.evaluate(exp, ENV)));
+                    }
 
                     input = "";
                 }
 
             } catch (Throwable t) {
                 out.println("Error: " + t.getMessage());
+                t.printStackTrace();
                 input = "";
             }
 
@@ -58,38 +65,10 @@ public class Repl {
     }
 
     private static String print(Expression expression) {
-        String exp = expressionToString(expression);
+        String exp = expression.print();
         if (exp.isEmpty()) {
             return "";
         }
         return String.format("-> %s\n", exp);
-    }
-
-    private static String expressionToString(Expression expression) {
-        if (expression instanceof BooleanExpression) {
-            return expression.bool().value ? "#t" : "#f";
-        }
-
-        if (expression instanceof ListExpression) {
-            return expression.list().value.stream()
-                    .map(Repl::expressionToString)
-                    .reduce((a, b) -> a + " " + b)
-                    .map(a -> "(" + a + ")")
-                    .orElse("()");
-        }
-
-        if (expression instanceof NumberExpression) {
-            return Long.toString(expression.number().value);
-        }
-
-        if (expression instanceof ProcedureExpression) {
-            return "#<Procedure>";
-        }
-
-        if (expression instanceof SymbolExpression) {
-            return expression.symbol().value;
-        }
-
-        return "";
     }
 }

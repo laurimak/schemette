@@ -10,6 +10,10 @@ import schemette.expressions.Expression;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static schemette.cons.Cons.cons;
+import static schemette.cons.Cons.empty;
+import static schemette.expressions.BooleanExpression.bool;
+import static schemette.expressions.ListExpression.list;
 import static schemette.expressions.NumberExpression.number;
 
 public class IntegrationTest {
@@ -22,8 +26,8 @@ public class IntegrationTest {
         String input = "(define factorial (lambda (n) (if (= n 1) 1 (* n (factorial (- n 1))))))";
         Environment environment = DefaultEnvironment.newInstance();
 
-        Evaluator.evaluate(Reader.read(input), environment);
-        Object result = Evaluator.evaluate(Reader.read("(factorial 3)"), environment);
+        eval(input, environment);
+        Object result = eval("(factorial 3)", environment);
 
         assertThat(result, is(number(6)));
     }
@@ -33,8 +37,8 @@ public class IntegrationTest {
         String input = "(define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))";
         Environment environment = DefaultEnvironment.newInstance();
 
-        Evaluator.evaluate(Reader.read(input), environment);
-        Expression result = Evaluator.evaluate(Reader.read("(fib 10)"), environment);
+        eval(input, environment);
+        Expression result = eval("(fib 10)", environment);
 
         assertThat(result, is(number(55)));
     }
@@ -42,9 +46,7 @@ public class IntegrationTest {
     @Test
     public void let() {
         String input = "(let ((x 10) (y 20)) (* x y))";
-        Environment environment = DefaultEnvironment.newInstance();
-
-        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+        Expression result = eval(input);
 
         assertThat(result, is(number(200)));
     }
@@ -53,9 +55,7 @@ public class IntegrationTest {
     public void eval() {
         String input = "(eval (quote (+ 1 2)))";
 
-        Environment environment = DefaultEnvironment.newInstance();
-
-        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+        Expression result = eval(input);
 
         assertThat(result, is(number(3)));
     }
@@ -66,8 +66,8 @@ public class IntegrationTest {
 
         Environment environment = DefaultEnvironment.newInstance();
 
-        Evaluator.evaluate(Reader.read(input), environment);
-        Expression result = Evaluator.evaluate(Reader.read("(foo)"), environment);
+        eval(input, environment);
+        Expression result = eval("(foo)", environment);
 
         assertThat(result, is(number(10)));
 
@@ -75,11 +75,7 @@ public class IntegrationTest {
 
     @Test
     public void lambda_sequence() {
-        String input = "((lambda () (define a 10) a))";
-
-        Environment environment = DefaultEnvironment.newInstance();
-
-        Expression result = Evaluator.evaluate(Reader.read(input), environment);
+        Expression result = eval("((lambda () (define a 10) a))");
 
         assertThat(result, is(number(10)));
 
@@ -90,10 +86,42 @@ public class IntegrationTest {
         thrown.expect(UnexpectedExpression.class);
         thrown.expectMessage("Expected expression of type 'ListExpression', got 'symbol(a)'");
 
-        String input = "(lambda a b)";
+        eval("(lambda a b)");
+    }
 
+    @Test
+    public void set_car() {
+        Expression result = eval("(let ((x (cons 1 '()))) (set-car! x 2) x)");
+
+        assertThat(result, is(list(cons(number(2), empty()))));
+    }
+
+    @Test
+    public void empty_list_in_null() {
+        Expression result = eval("(null? '())");
+
+        assertThat(result, is(bool(true)));
+    }
+
+    @Test
+    public void dotted_varargs() {
+        Expression result = eval("((lambda (. xs) xs) 1 2 3)");
+
+        assertThat(result, is(list(number(1), number(2), number(3))));
+    }
+
+    private Expression read(String input) {
+        return Reader.read(input).iterator().next();
+    }
+
+    private Expression eval(String input, Environment environment) {
+        return Evaluator.evaluate(read(input), environment);
+    }
+
+    private Expression eval(String input) {
         Environment environment = DefaultEnvironment.newInstance();
 
-        Evaluator.evaluate(Reader.read(input), environment);
+        return eval(input, environment);
     }
+
 }

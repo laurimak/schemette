@@ -7,7 +7,14 @@ public interface Expression {
         public String toString() {
             return "none()";
         }
+
+        @Override
+        public String print() {
+            return "";
+        }
     };
+
+    String print();
 
     static Expression none() {
         return NONE;
@@ -45,6 +52,8 @@ public interface Expression {
         return assertExpressionOfType(BooleanExpression.class);
     }
 
+    default StringExpression string() { return assertExpressionOfType(StringExpression.class); }
+
     default boolean isList() {
         return instanceOf(ListExpression.class);
     }
@@ -57,9 +66,13 @@ public interface Expression {
         return instanceOf(NumberExpression.class);
     }
 
+    default boolean isProcedure() {
+        return instanceOf(ProcedureExpression.class);
+    }
+
     default boolean isBoolean() {
         return instanceOf(BooleanExpression.class);
     }
 
-
+    default boolean isString() { return instanceOf(StringExpression.class); }
 }

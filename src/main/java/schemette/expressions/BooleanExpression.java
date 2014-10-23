@@ -25,4 +25,9 @@ public class BooleanExpression implements Expression {
     public String toString() {
         return String.format("bool(%s)", value);
     }
+
+    @Override
+    public String print() {
+        return value ? "#t" : "#f";
+    }
 }

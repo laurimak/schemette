@@ -24,4 +24,9 @@ public class NumberExpression implements Expression {
     public String toString() {
         return String.format("number(%s)", value);
     }
+
+    @Override
+    public String print() {
+        return Long.toString(value);
+    }
 }

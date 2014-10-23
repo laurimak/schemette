@@ -1,24 +1,25 @@
 package schemette;
 
 import com.google.common.collect.ImmutableSet;
+import schemette.cons.Cons;
 import schemette.environment.Environment;
 import schemette.expressions.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static schemette.cons.Cons.empty;
+import static schemette.expressions.ListExpression.list;
+import static schemette.expressions.SymbolExpression.symbol;
 
 public class Evaluator {
-
-    private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin", "let", "eval").stream()
-            .map(SymbolExpression::symbol)
-            .collect(Collectors.toSet());
-
     public static Expression evaluate(Expression exp, Environment env) {
+        ProcedureExpression eval = env.lookup(symbol("eval")).procedure();
+        return eval.lambda.apply(Cons.cons(exp, empty()));
+    }
+
+    public static Expression evaluate2(Expression exp, Environment env) {
         return analyze(exp).apply(env);
     }
 
@@ -37,13 +38,12 @@ public class Evaluator {
     }
 
     private static Function<Environment, Expression> analyzeSpecialForm(ListExpression exp) {
-        List<Expression> exps = exp.value;
-        switch (exps.get(0).symbol().value) {
+        Cons<Expression> exps = exp.value;
+        switch (exps.car().symbol().value) {
             case "quote":
                 return analyzeQuote(exps);
             case "set!":
                 return analyzeSet(exps);
-
             case "define":
                 if (isVarDefinition(exps)) {
                     return analyzeVarDefinition(exps);
@@ -58,28 +58,28 @@ public class Evaluator {
                 return analyzeBegin(exps);
             case "let":
                 return analyzeLet(exps);
-            case "eval":
-                return analyzeEval(exps);
+            case "cond":
+                return analyzeCond(exps);
         }
 
         throw new IllegalArgumentException(String.format("Invalid special form expression '%s'", exp));
 
     }
 
-    private static Function<Environment, Expression> analyzeQuote(List<Expression> exps) {
-        return env -> exps.get(1);
+    private static Function<Environment, Expression> analyzeQuote(Cons<Expression> exps) {
+        return env -> exps.cadr();
     }
 
-    private static Function<Environment, Expression> analyzeLambda(List<Expression> exps) {
-        List<SymbolExpression> paramNames = exps.get(1).list().value.stream()
+    private static Function<Environment, Expression> analyzeLambda(Cons<Expression> exps) {
+        Cons<SymbolExpression> paramNames = exps.cadr().list().value.stream()
                 .map(Expression::symbol)
-                .collect(Collectors.toList());
+                .collect(Cons.collector());
         return analyzeProcedure(paramNames, exps);
     }
 
-    private static Function<Environment, Expression> analyzeSet(List<Expression> exps) {
-        SymbolExpression symbol = exps.get(1).symbol();
-        Function<Environment, Expression> valueProc = analyze(exps.get(2));
+    private static Function<Environment, Expression> analyzeSet(Cons<Expression> exps) {
+        SymbolExpression symbol = exps.cadr().symbol();
+        Function<Environment, Expression> valueProc = analyze(exps.cdr().cadr());
 
         return env -> {
             env.set(symbol, valueProc.apply(env));
@@ -87,11 +87,11 @@ public class Evaluator {
         };
     }
 
-    private static Function<Environment, Expression> analyzeFunctionDefinition(List<Expression> exps) {
-        SymbolExpression name = exps.get(1).list().value.get(0).symbol();
-        List<SymbolExpression> paramNames = rest(exps.get(1).list().value).stream()
+    private static Function<Environment, Expression> analyzeFunctionDefinition(Cons<Expression> exps) {
+        SymbolExpression name = exps.cadr().list().value.car().symbol();
+        Cons<SymbolExpression> paramNames = exps.cadr().list().value.cdr().stream()
                 .map(Expression::symbol)
-                .collect(Collectors.toList());
+                .collect(Cons.collector());
         Function<Environment, Expression> lambda = analyzeProcedure(paramNames, exps);
         return env -> {
             env.define(name, lambda.apply(env));
@@ -99,17 +99,17 @@ public class Evaluator {
         };
     }
 
-    private static Function<Environment, Expression> analyzeVarDefinition(List<Expression> exps) {
-        SymbolExpression symbol = exps.get(1).symbol();
-        Function<Environment, Expression> valueProc = analyze(exps.get(2));
+    private static Function<Environment, Expression> analyzeVarDefinition(Cons<Expression> exps) {
+        SymbolExpression symbol = exps.cadr().symbol();
+        Function<Environment, Expression> valueProc = analyze(exps.cdr().cadr());
         return env -> {
             env.define(symbol, valueProc.apply(env));
             return Expression.none();
         };
     }
 
-    private static boolean isVarDefinition(List<Expression> exps) {
-        return exps.get(1).isSymbol();
+    private static boolean isVarDefinition(Cons<Expression> exps) {
+        return exps.cadr().isSymbol();
     }
 
     private static Function<Environment, Expression> analyzeFunctionCall(ListExpression exp) {
@@ -118,59 +118,81 @@ public class Evaluator {
                 .collect(Collectors.toList());
 
         return env -> {
-            List<Expression> list = map.stream()
+            Cons<Expression> list = map.stream()
                     .map(e -> e.apply(env))
-                    .collect(Collectors.toList());
-            return list.get(0).procedure().lambda.apply(rest(list));
+                    .collect(Cons.collector());
+            return list.car().procedure().lambda.apply(list.cdr());
         };
     }
 
-    private static <T> List<T> rest(List<T> list) {
-        return list.subList(1, list.size());
-    }
-
-    private static Function<Environment, Expression> analyzeLet(List<Expression> exps) {
+    private static Function<Environment, Expression> analyzeLet(Cons<Expression> exps) {
         List<Function<Environment, Expression>> letBindingValues = letBindingValues(exps);
         Function<Environment, Expression> letBody = analyzeProcedure(letBindingSymbols(exps), exps);
 
         return env -> {
-            List<Expression> letParams = letBindingValues.stream()
+            Cons<Expression> letParams = letBindingValues.stream()
                     .map(a -> a.apply(env))
-                    .collect(Collectors.toList());
+                    .collect(Cons.collector());
             return letBody.apply(env).procedure().lambda.apply(letParams);
         };
     }
 
-    private static List<SymbolExpression> letBindingSymbols(List<Expression> exps) {
-        return exps.get(1).list().value.stream()
-                .map(e -> e.list().value.get(0).symbol())
-                .collect(Collectors.toList());
+    private static Cons<SymbolExpression> letBindingSymbols(Cons<Expression> exps) {
+        return exps.cadr().list().value.stream()
+                .map(e -> e.list().value.car().symbol())
+                .collect(Cons.collector());
     }
 
-    private static List<Function<Environment, Expression>> letBindingValues(List<Expression> exps) {
-        return exps.get(1).list().value.stream()
-                .map(e -> e.list().value.get(1))
+    private static List<Function<Environment, Expression>> letBindingValues(Cons<Expression> exps) {
+        return exps.cadr().list().value.stream()
+                .map(e -> e.list().value.cadr())
                 .map(Evaluator::analyze)
                 .collect(Collectors.toList());
     }
 
-    private static Function<Environment, Expression> analyzeBegin(List<Expression> exps) {
-        return analyzeSequence(rest(exps));
+    private static Function<Environment, Expression> analyzeBegin(Cons<Expression> exps) {
+        return analyzeSequence(exps.cdr());
     }
 
-    private static Function<Environment, Expression> analyzeSequence(List<Expression> exps) {
+    private static Function<Environment, Expression> analyzeSequence(Cons<Expression> exps) {
         List<Function<Environment, Expression>> seq = exps.stream()
                 .map(Evaluator::analyze)
                 .collect(Collectors.toList());
 
         return env -> seq.stream()
-                        .collect(Collectors.reducing(Expression.none(), a -> a.apply(env), (a, b) -> b));
+                .collect(Collectors.reducing(Expression.none(), a -> a.apply(env), (a, b) -> b));
     }
 
-    private static Function<Environment, Expression> analyzeIf(List<Expression> exps) {
-        Function<Environment, Expression> condition = analyze(exps.get(1));
-        Function<Environment, Expression> consequent = analyze(exps.get(2));
-        Optional<Function<Environment, Expression>> alternative = exps.size() > 3 ? Optional.of(analyze(exps.get(3))) : Optional.empty();
+    private static Function<Environment, Expression> analyzeCond(Cons<Expression> exps) {
+        return condToIf(exps.cdr());
+    }
+
+    private static Function<Environment, Expression> condToIf(Cons<Expression> exps) {
+        if (exps.isEmpty()) {
+            return e -> BooleanExpression.bool(false);
+        } else if (exps.size() == 1) {
+            Function<Environment, Expression> condition = analyze(exps.car().list().value.car());
+            Function<Environment, Expression> consequent = analyze(exps.car().list().value.cadr());
+            Optional<Function<Environment, Expression>> alternative = Optional.empty();
+
+            return makeIf(condition, consequent, alternative);
+        } else {
+            if (exps.cadr().list().value.car().equals(symbol("else"))) {
+                Function<Environment, Expression> condition = analyze(exps.car().list().value.car());
+                Function<Environment, Expression> consequent = analyze(exps.car().list().value.cadr());
+                Optional<Function<Environment, Expression>> alternative = Optional.of(analyze(exps.cadr().list().value.cadr()));
+                return makeIf(condition, consequent, alternative);
+            } else {
+                Function<Environment, Expression> condition = analyze(exps.car().list().value.car());
+                Function<Environment, Expression> consequent = analyze(exps.car().list().value.cadr());
+                Optional<Function<Environment, Expression>> alternative = Optional.of(condToIf(exps.cdr()));
+
+                return makeIf(condition, consequent, alternative);
+            }
+        }
+    }
+
+    private static Function<Environment, Expression> makeIf(Function<Environment, Expression> condition, Function<Environment, Expression> consequent, Optional<Function<Environment, Expression>> alternative) {
         return env -> {
             if (isTruthy(condition.apply(env))) {
                 return consequent.apply(env);
@@ -180,30 +202,35 @@ public class Evaluator {
         };
     }
 
-
-    private static Function<Environment, Expression> analyzeEval(List<Expression> exps) {
-        Function<Environment, Expression> code = analyze(exps.get(1));
-        return env -> analyze(code.apply(env)).apply(env);
+    private static Function<Environment, Expression> analyzeIf(Cons<Expression> exps) {
+        Function<Environment, Expression> condition = analyze(exps.cadr());
+        Function<Environment, Expression> consequent = analyze(exps.cdr().cadr());
+        Optional<Function<Environment, Expression>> alternative = exps.size() > 3 ? Optional.of(analyze(exps.cdr().cdr().cadr())) : Optional.empty();
+        return makeIf(condition, consequent, alternative);
     }
 
-    private static Function<Environment, Expression> analyzeProcedure(List<SymbolExpression> names, List<Expression> exps) {
-        Function<Environment, Expression> body = analyzeSequence(rest(rest(exps)));
+    private static Function<Environment, Expression> analyzeProcedure(Cons<SymbolExpression> names, Cons<Expression> exps) {
+        Function<Environment, Expression> body = analyzeSequence(exps.cdr().cdr());
         return env ->
                 ProcedureExpression.procedure(args ->
-                        body.apply(env.extend(makeMap(names, args))));
+                        body.apply(env.extend(makeMap(names, args, new LinkedHashMap<>()))));
     }
 
-    private static Map<SymbolExpression, Expression> makeMap(List<SymbolExpression> names, List<Expression> args) {
-        return IntStream.range(0, names.size())
-                .mapToObj(Integer::new)
-                .map(i -> (Integer) i)
-                .collect(Collectors.toMap(i -> names.get(i).symbol(),
-                        args::get));
+    private static Map<SymbolExpression, Expression> makeMap(Cons<SymbolExpression> names, Cons<Expression> args, Map<SymbolExpression, Expression> map) {
+        if (names.isEmpty()) {
+            return map;
+        } else if (names.car().equals(symbol("."))) {
+            map.put(names.cadr(), list(args));
+            return map;
+        } else {
+            map.put(names.car(), args.car());
+            return makeMap(names.cdr(), args.cdr(), map);
+        }
     }
 
     private static boolean isSpecialForm(Expression exp) {
-        return exp.isList() && exp.list().value.get(0).isSymbol()
-                && SPECIAL_FORMS.contains(exp.list().value.get(0).symbol());
+        return exp.isList() && exp.list().value.car().isSymbol()
+                && SPECIAL_FORMS.contains(exp.list().value.car().symbol());
     }
 
     private static boolean isFunctionCall(Expression exp) {
@@ -211,10 +238,14 @@ public class Evaluator {
     }
 
     private static boolean isSelfEvaluating(Expression exp) {
-        return exp.isNumber() || exp.isBoolean() || exp == Expression.none() || (exp.isList() && exp.list().value.size() == 0);
+        return exp.isNumber() || exp.isBoolean() || exp.isString() || exp == Expression.none() || (exp.isList() && exp.list().value.size() == 0);
     }
 
     private static boolean isTruthy(Expression exp) {
         return !BooleanExpression.bool(false).equals(exp);
     }
+
+    private static final Set<SymbolExpression> SPECIAL_FORMS = ImmutableSet.of("quote", "set!", "define", "if", "lambda", "begin", "let", "cond").stream()
+            .map(SymbolExpression::symbol)
+            .collect(Collectors.toSet());
 }
