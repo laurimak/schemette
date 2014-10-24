@@ -20,17 +20,14 @@ public class Repl {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
 
         String input = "";
-        prompt(out, 0);
 
         while (true) {
-            try {
-                do {
-                    input += bufferedReader.readLine() + "\n";
-                } while (bufferedReader.ready());
+            prompt(out, Reader.countOpenParens(input));
 
+            try {
+                input += readLine(bufferedReader);
                 if (completeExpression(input)) {
-                    Iterable<Expression> exps = Reader.read(input);
-                    for (Expression exp : exps) {
+                    for (Expression exp : Reader.read(input)) {
                         out.print(print(Evaluator.evaluate(exp, ENV)));
                     }
 
@@ -39,12 +36,19 @@ public class Repl {
 
             } catch (Throwable t) {
                 out.println("Error: " + t.getMessage());
-                t.printStackTrace();
                 input = "";
             }
 
-            prompt(out, Reader.countOpenParens(input));
+
         }
+    }
+
+    private static String readLine(BufferedReader bufferedReader) throws IOException {
+        String line = "";
+        do {
+            line += bufferedReader.readLine() + "\n";
+        } while (bufferedReader.ready());
+        return line;
     }
 
     private static boolean completeExpression(String input) {

@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static schemette.Evaluator.evaluate;
-import static schemette.Evaluator.evaluate2;
 import static schemette.Reader.read;
 import static schemette.cons.Cons.cons;
 import static schemette.cons.Cons.empty;
@@ -98,7 +97,7 @@ public class DefaultEnvironment {
                         return Expression.none();
                     }))
             .put(symbol("eval"),
-                    procedure(args -> evaluate2(args.car(), Repl.ENV)))
+                    procedure(args -> evaluate(args.car(), Repl.ENV)))
             .put(symbol("load"),
                     procedure(args ->
                         StreamSupport.stream(read(loadFile(args.car().print())).spliterator(), false)
@@ -107,7 +106,8 @@ public class DefaultEnvironment {
             .build();
 
     private static String readLine() {
-        try (InputStreamReader reader = new InputStreamReader(Repl.INPUT_STREAM)) {
+        try {
+            InputStreamReader reader = new InputStreamReader(Repl.INPUT_STREAM);
             StringBuilder sb = new StringBuilder();
             for (int c = reader.read(); c != -1 && c != '\n' ; c = reader.read()) {
                 sb.append((char) c);

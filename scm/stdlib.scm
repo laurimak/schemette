@@ -5,16 +5,16 @@
 (define nil '())
 
 (define (map f lst)
-  (if (null? lst)
-    lst
-    (cons (f (car lst)) (map f (cdr lst)))))
+  (cond ((null? lst)
+         lst)
+        (else (cons (f (car lst)) (map f (cdr lst))))))
 
 (define (length lst)
-  (if (null? lst)
-    0
-    (+ 1 (length (cdr lst)))))
+  (cond ((null? lst) 
+         0)
+        (else (+ 1 (length (cdr lst))))))
 
-(define (newline) (display ""))
+(define (newline) (display "\n"))
 
 (define (compose f . fs)
     (lambda (x)

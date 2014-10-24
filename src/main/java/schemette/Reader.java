@@ -44,7 +44,7 @@ public class Reader {
                     throw new UnmatchedDoubleQuotes("");
                 }
 
-                res.add(input.substring(stringStart, ++i));
+                res.add(input.substring(stringStart, ++i).replace("\\n", "\n"));
             } else {
                 int stringStart = i;
                 while (i < input.length() && !(Character.isWhitespace(input.charAt(i)) || DELIMITERS.contains(input.charAt(i)))) {

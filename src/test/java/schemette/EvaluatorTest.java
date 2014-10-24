@@ -154,7 +154,8 @@ public class EvaluatorTest {
     }
 
     private static Environment emptyEnvironment() {
-        return new Environment(new HashMap<>());
+//        return new Environment(new HashMap<>());
+        return DefaultEnvironment.newInstance();
     }
 
     private static Map<SymbolExpression, Expression> bindings(Expression... keyValues) {

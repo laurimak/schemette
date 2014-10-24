@@ -9,17 +9,12 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static schemette.cons.Cons.empty;
 import static schemette.expressions.ListExpression.list;
 import static schemette.expressions.SymbolExpression.symbol;
 
 public class Evaluator {
-    public static Expression evaluate(Expression exp, Environment env) {
-        ProcedureExpression eval = env.lookup(symbol("eval")).procedure();
-        return eval.lambda.apply(Cons.cons(exp, empty()));
-    }
 
-    public static Expression evaluate2(Expression exp, Environment env) {
+    public static Expression evaluate(Expression exp, Environment env) {
         return analyze(exp).apply(env);
     }
 

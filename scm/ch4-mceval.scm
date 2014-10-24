@@ -340,10 +340,15 @@
   (driver-loop))
 
 (define (prompt-for-input string)
-  (display string))
+  (newline)
+  (display string)
+  (newline))
 
 (define (announce-output string)
-   (display string))
+   (newline)
+   (display string)
+   (newline)
+   (newline)
 
 (define (user-print object)
   (if (compound-procedure? object)

@@ -118,10 +118,10 @@ public class DefaultEnvironmentTest {
     }
 
     @Test
-    public void cdr() {
-        Function<Cons<Expression>, Expression> function = lookupFunction("cadr");
+    public void car() {
+        Function<Cons<Expression>, Expression> function = lookupFunction("car");
 
-        assertThat(function.apply(cons(list(numberList(1, 2, 3)), Cons.<Expression>empty())), is(number(2)));
+        assertThat(function.apply(cons(list(numberList(1, 2, 3)), Cons.<Expression>empty())), is(number(1)));
     }
 
     private static Cons<Expression> numberList(Integer... numbers) {
