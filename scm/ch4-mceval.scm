@@ -348,7 +348,7 @@
    (newline)
    (display string)
    (newline)
-   (newline)
+   (newline))
 
 (define (user-print object)
   (if (compound-procedure? object)
