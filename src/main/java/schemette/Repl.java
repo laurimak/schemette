@@ -27,9 +27,8 @@ public class Repl {
             try {
                 input += readLine(bufferedReader);
                 if (completeExpression(input)) {
-                    for (Expression exp : Reader.read(input)) {
-                        out.print(print(Evaluator.evaluate(exp, ENV)));
-                    }
+                    Reader.read(input).stream()
+                            .forEach(e -> out.print(print(Evaluator.evaluate(e, ENV))));
 
                     input = "";
                 }
@@ -38,8 +37,6 @@ public class Repl {
                 out.println("Error: " + t.getMessage());
                 input = "";
             }
-
-
         }
     }
 

@@ -56,7 +56,7 @@ public class Reader {
         return res;
     }
 
-    public static Iterable<Expression> read(String input) {
+    public static List<Expression> read(String input) {
         if (input.trim().isEmpty()) {
             return ImmutableList.of(Expression.none());
         }
