@@ -1,4 +1,4 @@
-Schemette
+Schemette  [![Build Status](https://drone.io/github.com/laurimak/schemette/status.png)](https://drone.io/github.com/laurimak/schemette/latest)
 =========
 
 What
